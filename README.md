@@ -2,7 +2,7 @@
 
 A Flask + Supabase app for tracking movies you want to watch, marking them as watched, and rating them 1–5.
 
-**Live app:** [cinetracker-watchlist-app.herokuapp.com](https://cinetracker-watchlist-app.herokuapp.com)
+**Live app:** [cinetracker-watchlist-app.herokuapp.com]([https://cinetracker-watchlist-app.herokuapp.com](https://cinetracker-watchlist-app-d517f77cdcad.herokuapp.com/))
 
 > Work in progress — actively being extended and refined.
 
