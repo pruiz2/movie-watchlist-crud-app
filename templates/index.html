@@ -17,21 +17,39 @@
 
 <div class="content container my-4 text-center">
     
-    <!-- Top Action Bar with Toggle Button -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <!-- Logout Link/Button -->
-        <a href="/logout" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1">
-            <span>🚪</span> Logout
-        </a>
+    <!-- Top Action Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        
+        <!-- Conditional Auth Buttons -->
+        <div>
+            {% if session.get('user_id') %}
+                <!-- Shown ONLY when Logged In -->
+                <a href="/logout" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1">
+                    <span>🚪</span> Logout
+                </a>
+            {% else %}
+                <!-- Shown ONLY when Logged Out -->
+                <div class="d-flex gap-2">
+                    <a href="/login" class="btn btn-primary btn-sm fw-semibold">Sign In</a>
+                    <a href="/signup" class="btn btn-outline-primary btn-sm fw-semibold">Sign Up</a>
+                </div>
+            {% endif %}
+        </div>
 
-        <!-- Theme Toggle Button -->
+        <!-- Theme Toggle (Always Visible) -->
         <button id="theme-toggle" type="button" onclick="toggleTheme()" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2">
             <span id="theme-icon">🌙</span> 
             <span id="theme-text">Dark Mode</span>
         </button>
     </div>
 
-    <h1>CineTrack Watchlist</h1>
+    <!-- Main Header / Branding -->
+    <div class="text-center mb-4">
+        <a href="/" class="text-decoration-none text-reset">
+            <h1 class="fw-bold display-5 mb-1">CineTrack</h1>
+        </a>
+        <p class="text-body-secondary">Your personal movie watchlist</p>
+    </div>
     <p>Keep track of all your watched/unwatched movies in this section below!</p>
 
     {% if error %}
