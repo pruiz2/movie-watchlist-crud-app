@@ -104,6 +104,7 @@ def login():
         if 'application/json' in content_type:
             return jsonify({"message": "Logged in", "user_id": session["user_id"]})
         else:
+            flash("Welcome back!", "success")
             return redirect("/")  # This should trigger a 302
 
     except Exception as e:
@@ -111,6 +112,13 @@ def login():
         if 'application/json' not in content_type:
             return render_template('login.html', error="Invalid email or password")
         return jsonify({"error": "Invalid email or password"}), 401
+
+@app.route('/logout')
+def logout():
+    # Clear user session data
+    session.clear()
+    flash("You have been logged out successfully.", "info")
+    return redirect('/login')
 
 
 @app.route("/signup", methods=["GET", "POST"])
@@ -155,17 +163,6 @@ def sign_up():
             return jsonify({"error": "Unable to create account"}), 400
         else:
             return render_template('signup.html', error="Unable to create account. That email may already be registered.")
-
-
-@app.route("/logout", methods=["GET", "POST"])
-def logout():
-    try:
-        supabase.auth.sign_out()
-    except Exception as e:
-        print(f"Error signing out of Supabase: {e}")
-    session.clear()
-    return redirect("/login")
-
 
 # MOVIE ROUTES
 

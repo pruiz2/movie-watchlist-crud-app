@@ -1,39 +1,64 @@
 {% extends 'base.html' %}
 
 {% block head %}
-<title>Login Page</title>
-
+<title>Sign In - CineTrack</title>
 {% endblock %}
 
 {% block body %}
-<div class="form">
-    <h1>CineTrack Watchlist</h1>
-    <h3>Enter your login credentials</h3>
+<div class="container d-flex flex-column justify-content-center align-items-center min-vh-100 py-4">
+    
+    <!-- Top Action Bar (Theme Toggle) -->
+    <div class="position-absolute top-0 end-0 p-3">
+        <button id="theme-toggle" type="button" onclick="toggleTheme()" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2">
+            <span id="theme-icon">🌙</span> 
+            <span id="theme-text">Dark Mode</span>
+        </button>
+    </div>
 
-    {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
-    {% endif %}
-
-    <form action="/login" method="POST">
-
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" placeholder="Enter your Email" required>
-
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" placeholder="Enter your Password" required>
-
-        <div class="wrap">
-            <button type="submit">
-                Submit
-            </button>
+    <!-- Centered Login Card -->
+    <div class="card shadow-lg border-0 rounded-4 p-4 p-sm-5" style="max-width: 420px; width: 100%;">
+        <div class="text-center mb-4">
+            <h1 class="fw-bold h3 mb-1">CineTrack</h1>
+            <p class="text-body-secondary small">Welcome back! Sign in to your account</p>
         </div>
-    </form>
 
-    <p>Not registered?
-        <a href="/signup" style="text-decoration: none;">
-            Create an account
-        </a>
-    </p>
+        <!-- 1. Flash Messages (Moved inside the card) -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} py-2 small" role="alert">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Direct Route Error Message -->
+        {% if error %}
+        <div class="alert alert-danger py-2 small" role="alert">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="/login" method="POST">
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+                <label for="email">Email address</label>
+            </div>
+
+            <div class="form-floating mb-4">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                <label for="password">Password</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Sign In</button>
+        </form>
+
+        <div class="text-center mt-4">
+            <p class="small text-body-secondary mb-0">Don't have an account? 
+                <a href="/signup" class="text-decoration-none fw-semibold">Create one</a>
+            </p>
+        </div>
+    </div>
 </div>
-
 {% endblock %}
