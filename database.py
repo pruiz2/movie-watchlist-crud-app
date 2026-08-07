@@ -6,6 +6,7 @@ load_dotenv()
 
 url : str = os.environ.get("SUPABASE_URL")
 key : str = os.environ.get("SUPABASE_KEY")
+omdb_key: str = os.environ.get("OMDB_KEY")
 
 if not url or not key:
     raise ValueError("Missing Supabase URL or Key. Check your .env file.")

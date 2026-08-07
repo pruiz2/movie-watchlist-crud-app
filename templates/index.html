@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
 
 {% block head %}
-<title>Movie Watchlist</title>
+<title>CineTrack Watchlist</title>
 
 {% endblock %}
 
 {% block body %}
+
 <!-- Display Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
@@ -16,7 +17,8 @@
 {% endwith %}   
 
 <div class="content">
-    <h1>Movie Watchlist</h1>
+    <h1>CineTrack Watchlist</h1>
+    <p>Keep track of all your watched/unwatched movies in this section below!</p>
 
     {% if error %}
     <div class="alert">{{ error }}</div>
@@ -27,16 +29,26 @@
     {% else %}
 
     <table>
-        <tr>
-            <th>Title</th>
-            <th>Date Added</th>
-            <th>Watched</th>
-            <th>Rating</th>
-            <th>Actions</th>
-        </tr>
+        <thead>
+            <tr>
+                <th>Poster</th>
+                <th>Title</th>
+                <th>Date Added</th>
+                <th>Watched</th>
+                <th>Rating</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
 
         {% for movie in movies %}
             <tr>
+                <td>
+                    {% if movie.poster_url %}
+                        <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" width="50">
+                    {% else %}
+                        <span>No Poster</span>
+                    {% endif %}
+                </td>
                 <td>{{ movie.title }}</td>
                 <td>{{ movie.created_at[:10] }}</td>
                 <td>

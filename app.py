@@ -1,10 +1,12 @@
 import os
+import requests
 from functools import wraps
 from flask import Flask, render_template, url_for, request, redirect, jsonify, session, flash
-from database import supabase
+from database import supabase, omdb_key
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
+app.config["OMDB_KEY"] = omdb_key
 
 
 def require_login(view):
@@ -167,21 +169,42 @@ def logout():
 
 # MOVIE ROUTES
 
-@app.route("/movies", methods=["POST"])
+@app.route("/movies", methods=["POST", "GET"])
 @require_login
 def add_movie():
     if not restore_supabase_session():
         flash("Your session has expired. Please log in again.", "error")
         return redirect("/login")
-
+    
+    
     title = request.form.get("content")
-
+    
     if not title:
         flash("Title is required to add a movie.", "error")
         return redirect("/")
 
+    poster_url = None
+
+    try:
+        url = f"http://www.omdbapi.com/?apikey={app.config['OMDB_KEY']}&t={title}"
+        print(f"DEBUG - Calling OMDb URL: {url}")  # Check if key/title formatted right
+        
+        poster = requests.get(url, timeout=5)
+        data = poster.json()
+        print(f"DEBUG - OMDb Response Data: {data}")  # Check what OMDb actually sent back
+
+        if data.get("Response") == "True" and data.get("Poster") != "N/A":
+            poster_url = data.get("Poster")
+            print(f"DEBUG - Poster URL Found: {poster_url}")
+        else:
+            print(f"DEBUG - No valid poster in response: {data.get('Error', 'N/A poster')}")
+
+    except Exception as e:
+        print(f"DEBUG - Exception during OMDb fetch: {e}")
+    
     new_movie = {
         "user_id": session["user_id"],
+        "poster_url": poster_url,
         "title": title,
         "watched": False
     }
@@ -205,7 +228,7 @@ def get_movies():
     try:
         response = (
             supabase.table("movies")
-            .select("id, title, watched, created_at")
+            .select("id, title, watched, poster_url, created_at")
             .eq("user_id", session["user_id"])
             .execute()
         )
