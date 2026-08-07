@@ -1,0 +1,19 @@
+# Environment variables / secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+.venv/
+
+# Flask
+instance/
+.flaskenv
+
+# OS / editor cruft
+.DS_Store
+.vscode/
+*.swp

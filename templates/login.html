@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Login Page</title>
+
+{% endblock %}
+
+{% block body %}
+<div class="form">
+    <h1>Movie Watchlist API</h1>
+    <h3>Enter your login credentials</h3>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form action="/login" method="POST">
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" placeholder="Enter your Email" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" placeholder="Enter your Password" required>
+
+        <div class="wrap">
+            <button type="submit">
+                Submit
+            </button>
+        </div>
+    </form>
+
+    <p>Not registered?
+        <a href="/signup" style="text-decoration: none;">
+            Create an account
+        </a>
+    </p>
+</div>
+
+{% endblock %}
