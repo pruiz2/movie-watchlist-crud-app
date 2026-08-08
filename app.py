@@ -2,11 +2,12 @@ import os
 import requests
 from functools import wraps
 from flask import Flask, render_template, url_for, request, redirect, jsonify, session, flash
-from database import supabase, omdb_key
+from database import supabase, omdb_key, tmdb_key
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 app.config["OMDB_KEY"] = omdb_key
+app.config["TMDB_KEY"] = tmdb_key
 
 
 def require_login(view):
@@ -234,6 +235,25 @@ def get_movies():
     except Exception as e:
         print(f"Database error: {e}")
         return jsonify({"error": "Failed to fetch movies"}), 500
+
+@app.route('/search-movie', methods=['GET'])
+def search_movie():
+    query = request.args.get('q', '')
+
+    if not query:
+        return jsonify([])
+
+    api_key = app.config['TMDB_KEY']
+    url = f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&query={query}"
+
+    response = requests.get(url)
+    data = response.json()
+    
+    # 3. Extract the array of movie results (TMDB uses data.get('results', []))
+    movies = data.get('results', [])
+    
+    # 4. Return as JSON back to JS
+    return jsonify(movies)
 
 
 @app.route("/delete/<movie_id>", methods=["GET", "POST"])

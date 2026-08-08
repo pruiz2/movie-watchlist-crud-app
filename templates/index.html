@@ -6,7 +6,7 @@
 
 {% block body %}
 
-<!-- 1. Flash Messages -->
+<!-- Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
@@ -56,20 +56,30 @@
     <div class="alert alert-danger">{{ error }}</div>
     {% endif %}
 
-    <!-- 3. Add Movie Form -->
+    <!-- Add Movie Form -->
     <div class="mb-4 p-4 bg-body-tertiary rounded shadow-sm border text-start">
         <h3 class="h5 mb-3 text-center text-sm-start">Add a New Movie</h3>
         <form action="/movies" method="POST" class="row g-3">
-            <div class="col-8 col-sm-9">
-                <input type="text" name="content" class="form-control" placeholder="Movie Title..." required>
+            
+            <!-- Input wrapper with relative positioning -->
+            <div class="col-8 col-sm-9 position-relative">
+                <input type="text" id="input" name="content" class="form-control" placeholder="Search a movie..." autocomplete="off" required>
+                
+                <!-- Hidden fields populated by JS on selection -->
+                <input type="hidden" id="poster_path" name="poster_path">
+                <input type="hidden" id="tmdb_id" name="tmdb_id">
+
+                <!-- Floating Dropdown Container -->
+                <div id="search-results" class="dropdown-menu w-100 shadow-lg mt-1" style="display: none; max-height: 300px; overflow-y: auto;"></div>
             </div>
+
             <div class="col-4 col-sm-3">
-                <input type="submit" class="btn btn-primary w-100" value="Add Movie"> 
+                <button type="submit" class="btn btn-primary w-100 fw-semibold">Add Movie</button> 
             </div>
         </form>
     </div>
 
-    <!-- 2. Movie Grid Section (4 per row) -->
+    <!-- Movie Grid Section (4 per row) -->
     {% if movies|length < 1 %}
         <div class="text-center py-5">
             <h4>There are no movies. Add one above!</h4>
@@ -129,4 +139,8 @@
     {% endif %}
 
 </div>
+
+<!-- Include Live Search Script -->
+<script src="{{ url_for('static', filename='js/live_search.js') }}"></script>
+
 {% endblock %}
