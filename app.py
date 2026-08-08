@@ -2,6 +2,8 @@ import os
 import requests
 from functools import wraps
 from flask import Flask, render_template, url_for, request, redirect, jsonify, session, flash
+from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer
 from database import supabase, omdb_key, tmdb_key
 
 app = Flask(__name__)
@@ -122,6 +124,49 @@ def logout():
     return redirect('/login')
 
 
+@app.route('/forgot_password', methods=['POST', 'GET'])
+def reset_request():
+    if request.method == 'GET':
+        return render_template('forgot_password.html')
+
+    email = request.form.get('email')
+
+    if email:
+        try:
+            redirect_url = url_for('update_password', _external=True)
+            supabase.auth.reset_password_for_email(
+                email,
+                redirect_to=redirect_url
+            )
+        except Exception as e:
+            print(f"Supabase password reset error: {e}")
+
+    flash("If an account exists with that email, a password link has been sent.", "info")
+    return redirect(url_for('login'))
+
+
+@app.route('/update_password', methods=['GET', 'POST'])
+def update_password():
+    if request.method == 'GET':
+        return render_template('update_password.html')
+
+    new_password = request.form.get('password')
+    confirm_password = request.form.get('confirm_password')
+
+    if not new_password or new_password != confirm_password:
+        flash("Passwords do not match.", "error")
+        return render_template('update_password.html')
+
+    try:
+        supabase.auth.update_user({"password": new_password})
+        flash("Your password has been successfuly updated! Please log in.", "success")
+        return redirect(url_for('login'))
+    except Exception as e:
+        print(f"Error updating password: {e}")
+        flash("Unable to update to update_password. Link may have expired.", "error")
+        return redirect(url_for('reset_request'))
+
+
 @app.route("/signup", methods=["GET", "POST"])
 def sign_up():
     # 1. Handle displaying the page
@@ -167,7 +212,7 @@ def sign_up():
 
 # MOVIE ROUTES
 
-@app.route("/movies", methods=["POST", "GET"])
+@app.route("/movies", methods=["POST"])
 @require_login
 def add_movie():
     if not restore_supabase_session():
