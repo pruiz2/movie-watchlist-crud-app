@@ -34,8 +34,12 @@ function renderDropdown(movies) {
 
         item.addEventListener('click', () => {
             title_field.value = title;
-            document.getElementById('poster_path').value = movie.poster_path || '';
-            document.getElementById('tmdb_id').value = movie.id || '';
+
+            const posterField = document.getElementById('poster_path');
+            const tmdbField = document.getElementById('tmdb_id');
+            if (posterField) posterField.value = movie.poster_path || '';
+            if (tmdbField) tmdbField.value = movie.id || '';
+
             container.innerHTML = '';
             container.style.display = 'none';
         });
@@ -49,9 +53,11 @@ function renderDropdown(movies) {
 title_field.addEventListener("input", () => {
     const title_value = title_field.value.trim();
 
-    // Any manual typing invalidates a previous selection
-    document.getElementById('poster_path').value = '';
-    document.getElementById('tmdb_id').value = '';
+    // Any manual typing invalidates a previous selection (if fields exist)
+    const posterField = document.getElementById('poster_path');
+    const tmdbField = document.getElementById('tmdb_id');
+    if (posterField) posterField.value = '';
+    if (tmdbField) tmdbField.value = '';
 
     if (title_value.length >= 2) {
         getMovieTitle(title_value);
