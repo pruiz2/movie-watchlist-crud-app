@@ -1,7 +1,7 @@
 import os
 import requests
 from functools import wraps
-from flask import Flask, render_template, url_for, request, redirect, jsonify, session, flash
+from flask import Flask, render_template, url_for, request, redirect, jsonify, session, flash, send_from_directory
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
 from database import supabase, omdb_key, tmdb_key
@@ -11,6 +11,10 @@ app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 app.config["OMDB_KEY"] = omdb_key
 app.config["TMDB_KEY"] = tmdb_key
 
+
+@app.route('/google2dfe8b8a8952cba2.html')
+def google_verify():
+    return send_from_directory('static', 'google2dfe8b8a8952cba2.html')
 
 def require_login(view):
     """Redirect to /login if there's no logged-in user in the session."""
