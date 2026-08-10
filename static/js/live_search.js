@@ -34,6 +34,8 @@ function renderDropdown(movies) {
 
         item.addEventListener('click', () => {
             title_field.value = title;
+            document.getElementById('poster_path').value = movie.poster_path || '';
+            document.getElementById('tmdb_id').value = movie.id || '';
             container.innerHTML = '';
             container.style.display = 'none';
         });
@@ -46,6 +48,10 @@ function renderDropdown(movies) {
 
 title_field.addEventListener("input", () => {
     const title_value = title_field.value.trim();
+
+    // Any manual typing invalidates a previous selection
+    document.getElementById('poster_path').value = '';
+    document.getElementById('tmdb_id').value = '';
 
     if (title_value.length >= 2) {
         getMovieTitle(title_value);

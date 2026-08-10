@@ -222,33 +222,42 @@ def add_movie():
     if not restore_supabase_session():
         flash("Your session has expired. Please log in again.", "error")
         return redirect("/login")
-    
-    
+
     title = request.form.get("content")
-    
+    poster_path = request.form.get("poster_path")
+    tmdb_id = request.form.get("tmdb_id")
+
     if not title:
         flash("Title is required to add a movie.", "error")
         return redirect("/")
 
     poster_url = None
 
-    try:
-        url = f"http://www.omdbapi.com/?apikey={app.config['OMDB_KEY']}&t={title}"
-        print(f"DEBUG - Calling OMDb URL: {url}")  # Check if key/title formatted right
-        
-        poster = requests.get(url, timeout=5)
-        data = poster.json()
-        print(f"DEBUG - OMDb Response Data: {data}")  # Check what OMDb actually sent back
+    if poster_path:
+        # User selected a result from the TMDB live search dropdown —
+        # use that poster directly, no need to hit OMDb.
+        poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
+        print(f"DEBUG - Using TMDB poster path: {poster_url}")
+    else:
+        # Fallback: no dropdown selection was made (user typed and
+        # submitted directly), so resolve the poster via OMDb by title.
+        try:
+            url = f"http://www.omdbapi.com/?apikey={app.config['OMDB_KEY']}&t={title}"
+            print(f"DEBUG - Calling OMDb URL: {url}")
 
-        if data.get("Response") == "True" and data.get("Poster") != "N/A":
-            poster_url = data.get("Poster")
-            print(f"DEBUG - Poster URL Found: {poster_url}")
-        else:
-            print(f"DEBUG - No valid poster in response: {data.get('Error', 'N/A poster')}")
+            poster = requests.get(url, timeout=5)
+            data = poster.json()
+            print(f"DEBUG - OMDb Response Data: {data}")
 
-    except Exception as e:
-        print(f"DEBUG - Exception during OMDb fetch: {e}")
-    
+            if data.get("Response") == "True" and data.get("Poster") != "N/A":
+                poster_url = data.get("Poster")
+                print(f"DEBUG - Poster URL Found: {poster_url}")
+            else:
+                print(f"DEBUG - No valid poster in response: {data.get('Error', 'N/A poster')}")
+
+        except Exception as e:
+            print(f"DEBUG - Exception during OMDb fetch: {e}")
+
     new_movie = {
         "user_id": session["user_id"],
         "poster_url": poster_url,
