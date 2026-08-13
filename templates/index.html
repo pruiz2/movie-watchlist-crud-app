@@ -6,7 +6,6 @@
 
 {% block body %}
 
-<!-- Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
@@ -17,18 +16,14 @@
 
 <div class="content container my-4 text-center">
     
-    <!-- Top Action Bar -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         
-        <!-- Conditional Auth Buttons -->
         <div>
             {% if session.get('user_id') %}
-                <!-- Shown ONLY when Logged In -->
                 <a href="/logout" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1">
                     <span>🚪</span> Logout
                 </a>
             {% else %}
-                <!-- Shown ONLY when Logged Out -->
                 <div class="d-flex gap-2">
                     <a href="/login" class="btn btn-primary btn-sm fw-semibold">Sign In</a>
                     <a href="/signup" class="btn btn-outline-primary btn-sm fw-semibold">Sign Up</a>
@@ -36,14 +31,12 @@
             {% endif %}
         </div>
 
-        <!-- Theme Toggle (Always Visible) -->
         <button id="theme-toggle" type="button" onclick="toggleTheme()" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2">
             <span id="theme-icon">🌙</span> 
             <span id="theme-text">Dark Mode</span>
         </button>
     </div>
 
-    <!-- Main Header / Branding -->
     <div class="text-center mb-4">
         <a href="/" class="text-decoration-none text-reset">
             <h1 class="fw-bold display-5 mb-1">CineTrack</h1>
@@ -56,20 +49,45 @@
     <div class="alert alert-danger">{{ error }}</div>
     {% endif %}
 
-    <!-- Add Movie Form -->
+    <div class="container my-4">
+        <div class="d-flex justify-content-end gap-2 mb-3">
+            
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="watchedFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Watch Status
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="watchedFilterDropdown">
+                    <li><a class="dropdown-item" href="/?watched=all{% if request.args.get('rating') %}&rating={{ request.args.get('rating') }}{% endif %}">All</a></li>
+                    <li><a class="dropdown-item" href="/?watched=true{% if request.args.get('rating') %}&rating={{ request.args.get('rating') }}{% endif %}">Watched</a></li>
+                    <li><a class="dropdown-item" href="/?watched=false{% if request.args.get('rating') %}&rating={{ request.args.get('rating') }}{% endif %}">Unwatched</a></li>
+                </ul>
+            </div>
+
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="ratingFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Rating
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ratingFilterDropdown">
+                    <li><a class="dropdown-item" href="/?rating=all{% if request.args.get('watched') %}&watched={{ request.args.get('watched') }}{% endif %}">All Ratings</a></li>
+                    {% for n in range(1, 6) %}
+                        <li><a class="dropdown-item" href="/?rating={{ n }}{% if request.args.get('watched') %}&watched={{ request.args.get('watched') }}{% endif %}">{{ n }} Stars</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
     <div class="mb-4 p-4 bg-body-tertiary rounded shadow-sm border text-start">
         <h3 class="h5 mb-3 text-center text-sm-start">Add a New Movie</h3>
         <form action="/movies" method="POST" class="row g-3">
             
-            <!-- Input wrapper with relative positioning -->
             <div class="col-8 col-sm-9 position-relative">
                 <input type="text" id="input" name="content" class="form-control" placeholder="Search a movie..." autocomplete="off" required>
                 
-                <!-- Hidden fields populated by JS on selection -->
                 <input type="hidden" id="poster_path" name="poster_path">
                 <input type="hidden" id="tmdb_id" name="tmdb_id">
 
-                <!-- Floating Dropdown Container -->
                 <div id="search-results" class="dropdown-menu w-100 shadow-lg mt-1" style="display: none; max-height: 300px; overflow-y: auto;"></div>
             </div>
 
@@ -79,7 +97,6 @@
         </form>
     </div>
 
-    <!-- Movie Grid Section (4 per row) -->
     {% if movies|length < 1 %}
         <div class="text-center py-5">
             <h4>There are no movies. Add one above!</h4>
@@ -92,14 +109,11 @@
                 <div class="col">
                     <div class="card h-100 shadow-sm border">
                         
-                        <!-- Poster Image -->
                         <img src="{{ movie.poster_url if movie.poster_url else 'https://via.placeholder.com/300x450?text=No+Poster' }}" class="card-img-top" alt="{{ movie.title }}">
 
-                        <!-- Card Main Content -->
                         <div class="card-body">
                             <h5 class="card-title">{{ movie.title }}</h5>
                             
-                            <!-- Watched Status Selector -->
                             <form action="/update/{{ movie.id }}" method="POST" class="mt-2">
                                 <select name="watched" class="form-select form-select-sm" onchange="this.form.submit()">
                                     <option value="false" {% if not movie.watched %}selected{% endif %}>Not Watched</option>
@@ -109,10 +123,8 @@
                             </form>
                         </div>
 
-                        <!-- Card Footer Controls -->
                         <div class="card-footer bg-transparent border-top-0 d-flex justify-content-between align-items-center">
                             
-                            <!-- Rating Selector -->
                             <form action="/update/{{ movie.id }}" method="POST">
                                 <select name="rating" class="form-select form-select-sm" onchange="this.form.submit()">
                                     <option value="" {% if not movie.rating %}selected{% endif %}>Not Rated</option>
@@ -123,7 +135,6 @@
                                 <input type="hidden" name="watched" value="{{ 'true' if movie.watched else 'false' }}">
                             </form>
 
-                            <!-- Delete Form / Button -->
                             <form action="/delete/{{ movie.id }}" method="POST">
                                 <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
                             </form>
@@ -140,7 +151,50 @@
 
 </div>
 
-<!-- Include Live Search Script -->
+{% if total_pages and total_pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+        
+        <li class="page-item {% if not has_prev %}disabled{% endif %}">
+            <a class="page-link" href="/?page={{ page - 1 }}{% if request.args.get('rating') %}&rating={{ request.args.get('rating') }}{% endif %}{% if request.args.get('watched') %}&watched={{ request.args.get('watched') }}{% endif %}">
+                Previous
+            </a>
+        </li>
+
+        {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+                <a class="page-link" href="/?page={{ p }}{% if request.args.get('rating') %}&rating={{ request.args.get('rating') }}{% endif %}{% if request.args.get('watched') %}&watched={{ request.args.get('watched') }}{% endif %}">
+                    {{ p }}
+                </a>
+            </li>
+        {% endfor %}
+
+        <li class="page-item {% if not has_next %}disabled{% endif %}">
+            <a class="page-link" href="/?page={{ p + 1 if page is undefined else page + 1 }}{% if request.args.get('rating') %}&rating={{ request.args.get('rating') }}{% endif %}{% if request.args.get('watched') %}&watched={{ request.args.get('watched') }}{% endif %}">
+                Next
+            </a>
+        </li>
+
+    </ul>
+</nav>
+{% endif %}
+
+<script>
+    // 1. Before the page reloads/unloads, save current scroll position
+    window.addEventListener("beforeunload", () => {
+        sessionStorage.setItem("scrollPosition", window.scrollY);
+    });
+
+    // 2. When the page loads, check if a saved position exists and restore it
+    document.addEventListener("DOMContentLoaded", () => {
+        const savedPosition = sessionStorage.getItem("scrollPosition");
+        if (savedPosition) {
+            window.scrollTo(0, parseInt(savedPosition, 10));
+            sessionStorage.removeItem("scrollPosition"); // Clean up
+        }
+    });
+</script>
+
 <script src="{{ url_for('static', filename='js/live_search.js') }}"></script>
 
 {% endblock %}

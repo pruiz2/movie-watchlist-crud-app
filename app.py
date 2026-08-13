@@ -1,5 +1,6 @@
 import os
 import requests
+import math
 from functools import wraps
 from flask import Flask, render_template, url_for, request, redirect, jsonify, session, flash, send_from_directory
 from flask_mail import Message
@@ -48,25 +49,69 @@ def restore_supabase_session():
 @app.route("/", methods=["GET"])
 def home():
     if "user_id" not in session:
-        return render_template('index.html', movies=[], error="Please log in to view your watchlist")
+        return render_template('index.html', movies=[], total_pages=1, page=1, has_prev=False, has_next=False)
 
     if not restore_supabase_session():
         flash("Your session has expired. Please log in again.", "error")
         return redirect("/login")
 
-    try:
-        response = (
-            supabase.table("movies")
-            .select("*")
-            .eq("user_id", session["user_id"])
-            .execute()
-        )
-        movies = response.data
-    except Exception as e:
-        movies = []
-        print(f"Error fetching movies: {e}")
+    # 1. Pagination Setup
+    PER_PAGE = 12
+    page = request.args.get("page", 1, type=int)
+    if not page or page < 1:
+        page = 1
 
-    return render_template('index.html', movies=movies)
+    start = (page - 1) * PER_PAGE
+    end = start + PER_PAGE - 1
+
+    # 2. Extract Query Parameters for Filtering
+    rating_raw = request.args.get("rating")
+    watched_raw = request.args.get("watched")
+
+    # 3. Build Base Query with Exact Count Enabled
+    query = (
+        supabase.table("movies")
+        .select("*", count="exact")
+        .eq("user_id", session["user_id"])
+    )
+
+    # 4. Apply Filters dynamically
+    if rating_raw and rating_raw.isdigit():
+        val = int(rating_raw)
+        if 1 <= val <= 5:
+            query = query.eq("rating", val)
+
+    if watched_raw == "true":
+        query = query.eq("watched", True)
+    elif watched_raw == "false":
+        query = query.eq("watched", False)
+
+    # 5. Apply Range & Execute Query
+    try:
+        response = query.range(start, end).execute()
+        movies = response.data
+        
+        total_count = response.count or 0
+        total_pages = math.ceil(total_count / PER_PAGE) if total_count > 0 else 1
+
+        has_prev = page > 1
+        has_next = page < total_pages
+
+    except Exception as e:
+        print(f"Error fetching movies: {e}")
+        movies = []
+        total_pages = 1
+        has_prev = False
+        has_next = False
+
+    return render_template(
+        "index.html",
+        movies=movies,
+        page=page,
+        total_pages=total_pages,
+        has_prev=has_prev,
+        has_next=has_next
+    )
 
 # AUTH ROUTES
 
@@ -274,25 +319,66 @@ def add_movie():
 
     return redirect("/")
 
-
-@app.route("/movies", methods=["GET"])
+@app.route("/filter", methods=["GET"])
+@app.route("/", methods=["GET"])
 @require_login
 def get_movies():
     if not restore_supabase_session():
-        return jsonify({"error": "Session expired"}), 401
+        flash("Your session has expired. Please log in again.", "error")
+        return redirect("/login")
 
+    # 1. Read URL Parameters
+    PER_PAGE = 12
+    page = request.args.get("page", 1, type=int)
+    if page < 1:
+        page = 1
+
+    start = (page - 1) * PER_PAGE
+    end = start + PER_PAGE - 1
+
+    rating_raw = request.args.get("rating")
+    watched_raw = request.args.get("watched")
+
+    # 2. Build Base Query with exact count enabled
+    query = (
+        supabase.table("movies")
+        .select("*", count="exact")
+        .eq("user_id", session["user_id"])
+    )
+
+    # 3. Apply Filters
+    if rating_raw and rating_raw.isdigit():
+        val = int(rating_raw)
+        if 1 <= val <= 5:
+            query = query.eq("rating", val)
+
+    if watched_raw == "true":
+        query = query.eq("watched", True)
+    elif watched_raw == "false":
+        query = query.eq("watched", False)
+
+    # 4. Apply Pagination Slicing & Execute
     try:
-        response = (
-            supabase.table("movies")
-            .select("id, title, watched, poster_url, created_at")
-            .eq("user_id", session["user_id"])
-            .execute()
+        response = query.range(start, end).execute()
+        
+        movies = response.data
+        total_count = response.count or 0
+        total_pages = math.ceil(total_count / PER_PAGE) if total_count > 0 else 1
+
+        return render_template(
+            "index.html",
+            movies=movies,
+            page=page,
+            total_pages=total_pages,
+            total_count=total_count,
+            has_prev=(page > 1),
+            has_next=(page < total_pages)
         )
-        return jsonify(response.data)
 
     except Exception as e:
         print(f"Database error: {e}")
-        return jsonify({"error": "Failed to fetch movies"}), 500
+        flash("Failed to fetch movies.", "error")
+        return render_template("index.html", movies=[], page=1, total_pages=1, total_count=0)
 
 @app.route('/search-movie', methods=['GET'])
 def search_movie():
@@ -340,32 +426,41 @@ def delete_movie(movie_id):
 @require_login
 def update_movie(movie_id):
     """
-    No separate edit page exists yet, so this toggles the movie's
-    watched status and redirects back to the watchlist.
-    Swap this out for a real edit form/template if you want more
-    fields to be editable.
+    Updates the watched status and rating for a specific movie.
+    - If a rating is added/updated, watched is automatically set to True.
+    - If watched is explicitly set to false, the rating is automatically cleared (None).
     """
     if not restore_supabase_session():
         flash("Your session has expired. Please log in again.", "error")
         return redirect("/login")
 
-    # The watched dropdown submits "true"/"false"; the rating dropdown
-    # submits "" (not rated) or a number 1-5. Each form includes a hidden
-    # input carrying the other field's current value, so both are always present.
     watched_raw = request.form.get("watched")
     rating_raw = request.form.get("rating")
 
-    watched = watched_raw == "true"
-
+    # 1. Parse rating input (1 to 5)
     rating = None
-    if rating_raw:
-        try:
-            rating = int(rating_raw)
-            if rating < 1 or rating > 5:
-                rating = None
-        except ValueError:
-            rating = None
+    if rating_raw and rating_raw.isdigit():
+        val = int(rating_raw)
+        if 1 <= val <= 5:
+            rating = val
 
+    if rating is not None and watched_raw != 'true':
+        flash("You must the movie as watched before adding a rating.", "error")
+        return redirect("/")
+
+    # 2. Determine watched status and handle relationship with rating
+    if watched_raw == "false":
+        # If user explicitly marks unwatched, wipe out any existing rating
+        watched = False
+        rating = None
+    elif rating is not None:
+        # If a rating is assigned, automatically mark the movie as watched
+        watched = True
+    else:
+        # Fallback to the form's watched state
+        watched = (watched_raw == "true")
+
+    # 3. Update database record
     try:
         supabase.table("movies") \
             .update({"watched": watched, "rating": rating}) \
@@ -379,6 +474,44 @@ def update_movie(movie_id):
         flash("Error updating movie.", "error")
 
     return redirect("/")
+
+
+@app.route("/filter", methods=["GET"])
+@require_login
+def filter_movies():
+    if not restore_supabase_session():
+        flash("Your session has expired. Please log in again.", "error")
+        return redirect("/login")
+
+    rating_raw = request.args.get("rating")
+    watched_raw = request.args.get("watched")
+
+    # Start base query targeting user's movies
+    query = supabase.table("movies").select("*").eq("user_id", session["user_id"])
+
+    # 1. Apply Rating Filter if a valid star rating (1-5) is provided
+    if rating_raw and rating_raw.isdigit():
+        rating_val = int(rating_raw)
+        if 1 <= rating_val <= 5:
+            query = query.eq("rating", rating_val)
+
+    # 2. Apply Watched Status Filter if provided
+    if watched_raw == "true":
+        query = query.eq("watched", True)
+    elif watched_raw == "false":
+        query = query.eq("watched", False)
+
+    # 3. Execute query
+    try:
+        response = query.execute()
+        movies = response.data
+    except Exception as e:
+        print(f"Error filtering movies: {e}")
+        flash("Error filtering movies.", "error")
+        movies = []
+
+    return render_template("index.html", movies=movies)
+
 
 
 if __name__ == "__main__":
