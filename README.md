@@ -2,7 +2,7 @@
 
 A Flask + Supabase app for tracking movies you want to watch, marking them as watched, and rating them 1–5.
 
-**Live app:** [CineTrack Watchlist]((https://movie-watchlist-crud-hja9gwxu1-pruiz2s-projects.vercel.app/))
+**Live app:** [CineTrack Watchlist](https://movie-watchlist-crud-hja9gwxu1-pruiz2s-projects.vercel.app/)
 
 > Work in progress — actively being extended and refined.
 
