@@ -19,7 +19,7 @@ A Flask + Supabase app for tracking movies you want to watch, marking them as wa
 - **Backend**: Flask (Python)
 - **Database & Auth**: Supabase (Postgres + Auth)
 - **Frontend**: Jinja templates, plain HTML/CSS
-- **Hosting**: Heroku, auto-deployed from `main`
+- **Hosting**: Vercel, auto-deployed from `main`
 
 ## Setup
 
@@ -58,7 +58,7 @@ A Flask + Supabase app for tracking movies you want to watch, marking them as wa
 
 ## Deployment
 
-The app is deployed on Heroku with automatic deploys from GitHub — any push to `main` triggers a redeploy. Environment variables (`SUPABASE_URL`, `SUPABASE_KEY`, `SECRET_KEY`) are set directly in Heroku's config vars, not committed to the repo.
+The app is deployed on Vercel with automatic deploys from GitHub — any push to `main` triggers a redeploy. Environment variables (`SUPABASE_URL`, `SUPABASE_KEY`, `SECRET_KEY`) are set directly in Vercel's config vars, not committed to the repo.
 
 ## Known limitations / next steps
 
@@ -72,7 +72,7 @@ The app is deployed on Heroku with automatic deploys from GitHub — any push to
 ```
 app.py            Flask routes (auth, movies CRUD)
 database.py       Supabase client setup
-Procfile          Heroku process definition
+Procfile          Heroku process definition // since redeployed over to Vercel
 requirements.txt  Python dependencies
 templates/
   base.html       Shared layout
